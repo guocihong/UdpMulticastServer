@@ -77,3 +77,8 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+object_script.UdpMulticastServer*
+bin/UdpMulticastServer*
+temp
+config.ini
