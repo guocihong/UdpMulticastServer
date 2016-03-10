@@ -17,7 +17,7 @@ class ShuaKaJiConfig : public QWidget
 public:
     explicit ShuaKaJiConfig(QWidget *parent = 0);
     ~ShuaKaJiConfig();
-    void LoadDefaultConfigure(QString SelectedDeviceIP);
+    void LoadDefaultConfigure(QString SelectedDeviceMac);
 
 private slots:
     void on_btnSend_clicked();

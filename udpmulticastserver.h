@@ -32,10 +32,6 @@
 #define BUFF_SIZE                        1025
 
 
-#define JiaYouZhanConfigBranch1
-#define ShuaKaJiConfigBranch1
-#define FaKaJiConfigBranch
-
 namespace Ui {
 class UdpMulticastServer;
 }
@@ -86,17 +82,11 @@ private:
     char ReceiveBuffer[BUFF_SIZE];
     char SendBuffer[BUFF_SIZE];
 
-#ifdef ShuaKaJiConfigBranch
     ShuaKaJiConfig *shuakajiconfig;
-#endif
-
-#ifdef JiaYouZhanConfigBranch
     JiaYouZhanConfig *jiayouzhanconfig;
-#endif
 
     DeviceUpgrade *device_upgrade;
     int SelectedRowIndex;
-    int row_index;
 
     QSqlQuery query;
 };

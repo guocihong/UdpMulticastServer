@@ -17,7 +17,7 @@ class JiaYouZhanConfig : public QWidget
 public:
     explicit JiaYouZhanConfig(QWidget *parent = 0);
     ~JiaYouZhanConfig();
-    void LoadDefaultConfigure(QString SelectedDeviceIP);
+    void LoadDefaultConfigure(QString SelectedDeviceMac);
 
 private slots:
     void on_btnSend_clicked();

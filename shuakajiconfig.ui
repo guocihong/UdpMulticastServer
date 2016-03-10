@@ -38,7 +38,7 @@
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>sgdzpic.3322.org</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -67,7 +67,7 @@
         <string notr="true"/>
        </property>
        <property name="text">
-        <string/>
+        <string>65000</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -90,7 +90,7 @@
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>30</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -120,7 +120,7 @@
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>60</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -150,7 +150,7 @@
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>60</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -180,7 +180,7 @@
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>SGT1TEST0001</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -293,6 +293,9 @@
          <width>0</width>
          <height>30</height>
         </size>
+       </property>
+       <property name="text">
+        <string>1</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

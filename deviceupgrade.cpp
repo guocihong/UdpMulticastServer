@@ -21,7 +21,7 @@ DeviceUpgrade::~DeviceUpgrade()
 
 void DeviceUpgrade::on_btnOpen_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("选择升级文件"),".", tr("*;;*.tgz *.tar.bz2 *.tar.gz"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("选择升级文件"),".", tr("*.tar.gz"));
     ui->lineEdit->setText(fileName);
     ui->progressBar->setValue(0);
     ui->UpgradeStatusLabel->clear();

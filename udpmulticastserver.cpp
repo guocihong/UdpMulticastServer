@@ -9,26 +9,14 @@ UdpMulticastServer::UdpMulticastServer(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    row_index = 0;
     SelectedRowIndex = -1;
     tableWidgetSetting();
 
-#ifdef ShuaKaJiConfigBranch
-    this->setWindowTitle(tr("组合认证刷卡主机配置升级工具"));
     shuakajiconfig = new ShuaKaJiConfig;
     connect(shuakajiconfig,SIGNAL(signalSendConfigureInfo(QString)),this,SLOT(slotSendConfigureInfo(QString)));
-#endif
 
-#ifdef JiaYouZhanConfigBranch
-    this->setWindowTitle(tr("零拷加油配置升级工具"));
     jiayouzhanconfig = new JiaYouZhanConfig;
     connect(jiayouzhanconfig,SIGNAL(signalSendConfigureInfo(QString)),this,SLOT(slotSendConfigureInfo(QString)));
-#endif
-
-#ifdef FaKaJiConfigBranch
-    this->setWindowTitle(tr("组合认证发卡主机升级工具"));
-    ui->btnConfigureDevice->setVisible(false);
-#endif
 
     device_upgrade = new DeviceUpgrade;
 
@@ -201,7 +189,7 @@ UdpMulticastServer::UdpMulticastServer(QWidget *parent) :
         closesocket(SendSocketFd);
         qDebug() << "WSAJoinLeaf RecvSocketFd" << WSAGetLastError();
         return;
-     }
+    }
 
     iSocketLen = sizeof(struct sockaddr_in);
 #endif
@@ -211,15 +199,11 @@ UdpMulticastServer::UdpMulticastServer(QWidget *parent) :
 UdpMulticastServer::~UdpMulticastServer()
 {
     delete ui;
-#ifdef ShuaKaJiConfigBranch
+
     delete shuakajiconfig;
-#endif
-
-#ifdef JiaYouZhanConfigBranch
     delete jiayouzhanconfig;
-#endif
-    delete device_upgrade;
 
+    delete device_upgrade;
 
 #ifdef Q_OS_LINUX
     /*退出组播组*/
@@ -239,6 +223,8 @@ UdpMulticastServer::~UdpMulticastServer()
 void UdpMulticastServer::on_btnSearchDevice_clicked()
 {
     if(ui->btnSearchDevice->text() == tr("搜索")){
+        query.exec(tr("DELETE FROM [dtm_device_configure_info]"));
+
 #ifdef Q_OS_LINUX
         if(sendto(SendSocketFd,MCAST_SEARCH_DEVICE,sizeof(MCAST_SEARCH_DEVICE),0,(struct sockaddr*)&SendMulticastAddr,sizeof(struct sockaddr_in)) < 0){
             perror("sendto()");
@@ -247,7 +233,8 @@ void UdpMulticastServer::on_btnSearchDevice_clicked()
 #endif
 
 #ifdef Q_OS_WIN32
-        if(sendto(SendSocketFd,MCAST_SEARCH_DEVICE,sizeof(MCAST_SEARCH_DEVICE),0,(struct sockaddr*)&SendRemoteMulticastAddr,sizeof(struct sockaddr_in)) < 0){
+        if(sendto(SendSocketFd,MCAST_SEARCH_DEVICE,sizeof(MCAST_SEARCH_DEVICE),0,(struct sockaddr*)&SendRemoteMulticastAddr,sizeof(struct sockaddr_in)) < 0)
+        {
             qDebug() << "sendto" << WSAGetLastError();
             return;
         }
@@ -255,17 +242,8 @@ void UdpMulticastServer::on_btnSearchDevice_clicked()
 
         ui->btnSearchDevice->setText(tr("停止"));
         ui->tableWidget->setSortingEnabled(false);
-        ui->tableWidget->clear();
-        tableWidgetSetting();
-        row_index = 0;
+        ui->tableWidget->clearContents();
         SelectedRowIndex = -1;
-#ifdef ShuaKaJiConfigBranch
-        query.exec(tr("DELETE FROM [dtm_shuakaji_device_configure_info]"));
-#endif
-
-#ifdef JiaYouZhanConfigBranch
-        query.exec(tr("DELETE FROM [dtm_jiayouzhan_device_configure_info]"));
-#endif
         ProcessDatagramTimer->start();
     }else if(ui->btnSearchDevice->text() == tr("停止")){
         ProcessDatagramTimer->stop();
@@ -281,20 +259,23 @@ void UdpMulticastServer::on_btnConfigureDevice_clicked()
         return;
     }
 
-    QString SelectedDeviceIP =
-            ui->tableWidget->item(SelectedRowIndex,0)->text();
+    QString SelectedDeviceMac = ui->tableWidget->item(SelectedRowIndex,4)->text();
 
-#ifdef ShuaKaJiConfigBranch
-    shuakajiconfig->LoadDefaultConfigure(SelectedDeviceIP);
-    CommonSetting::WidgetCenterShow(*shuakajiconfig);
-    shuakajiconfig->show();
-#endif
-
-#ifdef JiaYouZhanConfigBranch
-    jiayouzhanconfig->LoadDefaultConfigure(SelectedDeviceIP);
-    CommonSetting::WidgetCenterShow(*jiayouzhanconfig);
-    jiayouzhanconfig->show();
-#endif
+    if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "ShuaKaJiConfigBranch"){
+        shuakajiconfig->LoadDefaultConfigure(SelectedDeviceMac);
+        CommonSetting::WidgetCenterShow(*shuakajiconfig);
+        shuakajiconfig->show();
+    }else if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "JiaYouZhanConfigWiegBranch"){
+        shuakajiconfig->LoadDefaultConfigure(SelectedDeviceMac);
+        CommonSetting::WidgetCenterShow(*shuakajiconfig);
+        shuakajiconfig->show();
+    }else if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "JiaYouZhanConfigCertificateBranch"){
+        jiayouzhanconfig->LoadDefaultConfigure(SelectedDeviceMac);
+        CommonSetting::WidgetCenterShow(*jiayouzhanconfig);
+        jiayouzhanconfig->show();
+    }else{
+        QMessageBox::critical(this,tr("错误"),tr("本设备程序版本过低,请先升级"));
+    }
 }
 
 void UdpMulticastServer::on_btnUpgradeDevice_clicked()
@@ -304,8 +285,7 @@ void UdpMulticastServer::on_btnUpgradeDevice_clicked()
         return;
     }
 
-    QString SelectedDeviceIP =
-            ui->tableWidget->item(SelectedRowIndex,0)->text();
+    QString SelectedDeviceIP = ui->tableWidget->item(SelectedRowIndex,0)->text();
     device_upgrade->ServerIP = SelectedDeviceIP;
     qDebug() << SelectedDeviceIP;
     CommonSetting::WidgetCenterShow(*device_upgrade);
@@ -317,7 +297,7 @@ void UdpMulticastServer::slotProcessPendingDatagrams()
     memset(ReceiveBuffer,0,BUFF_SIZE);
 #ifdef Q_OS_LINUX
     if(recvfrom(RecvSocketFd,ReceiveBuffer,sizeof(ReceiveBuffer),0,(struct sockaddr*)&RecvMulticastAddr,&iSocketLen) < 0){
-//        perror("recvfrom()");
+        //        perror("recvfrom()");
         return;
     }
 #endif
@@ -334,122 +314,59 @@ void UdpMulticastServer::slotProcessPendingDatagrams()
     QString ClientFeedBackInfo = QString(ReceiveBuffer);
     if((ClientFeedBackInfo.split("###").at(0) == "Client") &&
             (ClientFeedBackInfo.split("###").at(1) == "SearchDevice")){
-#ifdef ShuaKaJiConfigBranch
-        QString ClientNetWorkInfo =
-                ClientFeedBackInfo.split("###").at(2);
-        QStringList ClientNetWorkInfoList =
-                ClientNetWorkInfo.split("\n");
+        QString ClientNetWorkInfo = ClientFeedBackInfo.split("###").at(2);
+        QStringList ClientNetWorkInfoList = ClientNetWorkInfo.split("\n");
         QString IP = ClientNetWorkInfoList.at(0).split("=").at(1);
         QString NetMask = ClientNetWorkInfoList.at(1).split("=").at(1);
         QString Gateway = ClientNetWorkInfoList.at(2).split("=").at(1);
         QString DNS = ClientNetWorkInfoList.at(3).split("=").at(1);
         QString MAC = ClientNetWorkInfoList.at(5).split("=").at(1);
 
-        QString ClientConfigureInfo =
-                ClientFeedBackInfo.split("###").at(3);
+        QString ClientConfigureInfo = ClientFeedBackInfo.split("###").at(3);
         CommonSetting::WriteFile("config.ini",ClientConfigureInfo);
+        QString ServerIP = CommonSetting::ReadSettings("config.ini","ServerNetwork/IP");
+        QString ServerListenPort = CommonSetting::ReadSettings("config.ini","ServerNetwork/PORT");
+        QString HeartIntervalTime = CommonSetting::ReadSettings("config.ini","time/HeartIntervalTime");
+        QString SwipCardIntervalTime = CommonSetting::ReadSettings("config.ini","time/SwipCardIntervalTime");
+        QString RelayOnTime = CommonSetting::ReadSettings("config.ini","time/RelayOnTime");
+        QString MaxTime = CommonSetting::ReadSettings("config.ini","time/MaxTime");
+        QString DeviceID = CommonSetting::ReadSettings("config.ini","DeviceID/ID");
+        QString SmartUSBNumber = CommonSetting::ReadSettings("config.ini","SmartUSB/Num");
 
-        QString DeviceID =
-                CommonSetting::ReadSettings("config.ini","DeviceID/ID");
-        QString ServerIP =
-                CommonSetting::ReadSettings("config.ini","ServerNetwork/IP");
-        QString ServerListenPort =
-                CommonSetting::ReadSettings("config.ini","ServerNetwork/PORT");
-        QString HeartIntervalTime =
-                CommonSetting::ReadSettings("config.ini","time/HeartIntervalTime");
-        QString MaxTime =
-                CommonSetting::ReadSettings("config.ini","time/MaxTime");
-        QString RelayOnTime =
-                CommonSetting::ReadSettings("config.ini","time/RelayOnTime");
-        QString SmartUSBNumber =
-                CommonSetting::ReadSettings("config.ini","SmartUSB/Num");
-
-        if(ClientFeedBackInfo.split("###").size() == 5){
+        QString Version;
+        if(ClientFeedBackInfo.split("###").size() >= 5){
             QString VersionInfo = ClientFeedBackInfo.split("###").at(4);
             CommonSetting::WriteFile("VersionInfo.ini",VersionInfo);
+            Version = CommonSetting::ReadSettings("VersionInfo.ini","Version/VersionInfo");
         }
-        QString Version =
-                CommonSetting::ReadSettings("VersionInfo.ini","Version/VersionInfo");
 
-        query.exec(tr("INSERT INTO [dtm_shuakaji_device_configure_info] ([develop_board_ip],[develop_board_mask],[develop_board_gateway],[develop_board_dns],[develop_board_mac],[device_id],[server_ip],[server_listen_port],[heart_interval_time],[max_time],[relay_on_time],[smartusb_number]) VALUES('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12')").arg(IP).arg(NetMask).arg(Gateway).arg(DNS).arg(MAC).arg(DeviceID).arg(ServerIP).arg(ServerListenPort).arg(HeartIntervalTime).arg(MaxTime).arg(RelayOnTime).arg(SmartUSBNumber));
+        QString DeviceType;
+        if(ClientFeedBackInfo.split("###").size() >= 6){
+            DeviceType = ClientFeedBackInfo.split("###").at(5);
+        }
+
+        query.exec(tr("INSERT INTO [dtm_device_configure_info] ([server_ip],[server_listen_port],[heart_interval_time],[swip_card_interval_time],[relay_on_time],[max_time],[device_id],[develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns],[develop_board_mac],[smartusb_number],[version],[device_type]) VALUES('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13','%14','%15')").arg(ServerIP).arg(ServerListenPort).arg(HeartIntervalTime).arg(SwipCardIntervalTime).arg(RelayOnTime).arg(MaxTime).arg(DeviceID).arg(IP).arg(Gateway).arg(NetMask).arg(DNS).arg(MAC).arg(SmartUSBNumber).arg(Version).arg(DeviceType));
         qDebug() << query.lastError();
-#endif
 
-#ifdef JiaYouZhanConfigBranch
-        QString ClientNetWorkInfo =
-                ClientFeedBackInfo.split("###").at(2);
-        QStringList ClientNetWorkInfoList =
-                ClientNetWorkInfo.split("\n");
-        QString IP = ClientNetWorkInfoList.at(0).split("=").at(1);
-        QString NetMask = ClientNetWorkInfoList.at(1).split("=").at(1);
-        QString Gateway = ClientNetWorkInfoList.at(2).split("=").at(1);
-        QString DNS = ClientNetWorkInfoList.at(3).split("=").at(1);
-        QString MAC = ClientNetWorkInfoList.at(5).split("=").at(1);
-
-        QString ClientConfigureInfo =
-                ClientFeedBackInfo.split("###").at(3);
-        CommonSetting::WriteFile("config.ini",ClientConfigureInfo);
-
-        QString DeviceID =
-                CommonSetting::ReadSettings("config.ini","DeviceID/ID");
-        QString ServerIP =
-                CommonSetting::ReadSettings("config.ini","ServerNetwork/IP");
-        QString ServerListenPort =
-                CommonSetting::ReadSettings("config.ini","ServerNetwork/PORT");
-        QString HeartIntervalTime =
-                CommonSetting::ReadSettings("config.ini","time/HeartIntervalTime");
-        QString SwipCardIntervalTime =
-                CommonSetting::ReadSettings("config.ini","time/SwipCardIntervalTime");
-
-        if(ClientFeedBackInfo.split("###").size() == 5){
-            QString VersionInfo = ClientFeedBackInfo.split("###").at(4);
-            CommonSetting::WriteFile("VersionInfo.ini",VersionInfo);
+        ui->tableWidget->clearContents();
+        int row_index = 0;
+        query.exec(tr("SELECT [develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns],[develop_board_mac],[version],[device_type] FROM [dtm_device_configure_info]"));
+        while(query.next()){
+            for(int i = 0; i < 7; i++){
+                QTableWidgetItem *item = new QTableWidgetItem(query.value(i).toString());
+                ui->tableWidget->setItem(row_index,i,item);
+            }
+            row_index++;
         }
-        QString Version =
-                CommonSetting::ReadSettings("VersionInfo.ini","Version/VersionInfo");
-
-        query.exec(tr("INSERT INTO [dtm_jiayouzhan_device_configure_info] ([develop_board_ip],[develop_board_mask],[develop_board_gateway],[develop_board_dns],[develop_board_mac],[device_id],[server_ip],[server_listen_port],[heart_interval_time],[swip_card_interval_time]) VALUES('%1','%2','%3','%4','%5','%6','%7','%8','%9','%10')").arg(IP).arg(NetMask).arg(Gateway).arg(DNS).arg(MAC).arg(DeviceID).arg(ServerIP).arg(ServerListenPort).arg(HeartIntervalTime).arg(SwipCardIntervalTime));
-        qDebug() << query.lastError();
-#endif
-
-#ifdef FaKaJiConfigBranch
-        QString ClientNetWorkInfo =
-                ClientFeedBackInfo.split("###").at(2);
-        QStringList ClientNetWorkInfoList =
-                ClientNetWorkInfo.split("\n");
-        QString IP = ClientNetWorkInfoList.at(0).split("=").at(1);
-        QString NetMask = ClientNetWorkInfoList.at(1).split("=").at(1);
-        QString Gateway = ClientNetWorkInfoList.at(2).split("=").at(1);
-        QString DNS = ClientNetWorkInfoList.at(3).split("=").at(1);
-        QString MAC = ClientNetWorkInfoList.at(5).split("=").at(1);
-
-        if(ClientFeedBackInfo.split("###").size() == 5){
-            QString VersionInfo = ClientFeedBackInfo.split("###").at(4);
-            CommonSetting::WriteFile("VersionInfo.ini",VersionInfo);
-        }
-        QString Version =
-                CommonSetting::ReadSettings("VersionInfo.ini","Version/VersionInfo");
-#endif
-        QStringList list;
-        list << IP << NetMask << Gateway << DNS << MAC << Version;
-        for(int i = 0; i <list.count() ; i++){
-            QTableWidgetItem *item = new QTableWidgetItem(list[i]);
-            ui->tableWidget->setItem(row_index,i,item);
-        }
-        row_index++;
         tableSetAlignment();
     }else if((ClientFeedBackInfo.split("###").at(0) == "Client") &&
              (ClientFeedBackInfo.split("###").at(1) == "Configure")){
         QString ConfigureStatus = ClientFeedBackInfo.split("###").at(2);
+
         if(ConfigureStatus == tr("OK")){
             QMessageBox::information(this,tr("提示"),tr("配置成功,设备自动重启"));
-#ifdef ShuaKaJiConfigBranch
             shuakajiconfig->close();
-#endif
-
-#ifdef JiaYouZhanConfigBranch
             jiayouzhanconfig->close();
-#endif
             ProcessDatagramTimer->stop();
         }
     }
@@ -458,21 +375,21 @@ void UdpMulticastServer::slotProcessPendingDatagrams()
 void UdpMulticastServer::slotSendConfigureInfo(QString ConfigureInfo)
 {
     QString MessageHeader = QString("Server###Configure###");
-    QString ConfigureDeviceIP = ui->tableWidget->item(SelectedRowIndex,0)->text();
-    QString TotalConfigureMessage = MessageHeader + ConfigureDeviceIP + QString("###") + ConfigureInfo;
+    QString ConfigureDeviceMac = ui->tableWidget->item(SelectedRowIndex,4)->text();
+    QString TotalConfigureMessage = MessageHeader + ConfigureDeviceMac + QString("###") + ConfigureInfo;
 
 #ifdef Q_OS_LINUX
-        if(sendto(SendSocketFd,TotalConfigureMessage.toAscii().data(),TotalConfigureMessage.count(),0,(struct sockaddr*)&SendMulticastAddr,sizeof(struct sockaddr_in)) < 0){
-            perror("sendto()");
-            return ;
-        }
+    if(sendto(SendSocketFd,TotalConfigureMessage.toAscii().data(),TotalConfigureMessage.count(),0,(struct sockaddr*)&SendMulticastAddr,sizeof(struct sockaddr_in)) < 0){
+        perror("sendto()");
+        return ;
+    }
 #endif
 
 #ifdef Q_OS_WIN32
-        if(sendto(SendSocketFd,TotalConfigureMessage.toAscii().data(),TotalConfigureMessage.count(),0,(struct sockaddr*)&SendRemoteMulticastAddr,sizeof(struct sockaddr_in)) < 0){
-            qDebug() << "sendto" << WSAGetLastError();
-            return;
-        }
+    if(sendto(SendSocketFd,TotalConfigureMessage.toAscii().data(),TotalConfigureMessage.count(),0,(struct sockaddr*)&SendRemoteMulticastAddr,sizeof(struct sockaddr_in)) < 0){
+        qDebug() << "sendto" << WSAGetLastError();
+        return;
+    }
 #endif
 
     ProcessDatagramTimer->stop();
@@ -482,9 +399,9 @@ void UdpMulticastServer::slotSendConfigureInfo(QString ConfigureInfo)
 void UdpMulticastServer::tableWidgetSetting()
 {
     ui->tableWidget->setRowCount(100);
-    ui->tableWidget->setColumnCount(6);
+    ui->tableWidget->setColumnCount(7);
     ui->tableWidget->setHorizontalHeaderLabels(
-                QStringList() << "IP" << "子网掩码" << "网关" << "DNS" << "MAC" << "版本");
+                QStringList() << "IP" << "网关" << "子网掩码" << "DNS" << "MAC" << "版本" << "设备类型");
 
     //设置单元格编辑模式
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -495,15 +412,21 @@ void UdpMulticastServer::tableWidgetSetting()
     //将行和列的大小设为与内容相匹配
     ui->tableWidget->resizeRowsToContents();
     ui->tableWidget->resizeColumnsToContents();
-    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+//    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+
+    int DeskWidth = qApp->desktop()->availableGeometry().width() - 30;
+    ui->tableWidget->setColumnWidth(0,DeskWidth * 0.125);
+    ui->tableWidget->setColumnWidth(1,DeskWidth * 0.125);
+    ui->tableWidget->setColumnWidth(2,DeskWidth * 0.125);
+    ui->tableWidget->setColumnWidth(3,DeskWidth * 0.125);
+    ui->tableWidget->setColumnWidth(4,DeskWidth * 0.15);
+    ui->tableWidget->setColumnWidth(5,DeskWidth * 0.1);
+    ui->tableWidget->setColumnWidth(6,DeskWidth * 0.15);
 
     //表格表头的显示与隐藏
     ui->tableWidget->horizontalHeader()->setVisible(true);
     ui->tableWidget->verticalHeader()->setVisible(true);
-
-    //所有单元格设置字体和字体大小
-//    ui->tableWidget->setFont(QFont(tr("宋体"),16));
 
     //设置水平表头所有列的对齐方式和字体
     for(int i = 0; i < ui->tableWidget->columnCount(); i++){
@@ -511,7 +434,6 @@ void UdpMulticastServer::tableWidgetSetting()
                 ui->tableWidget->horizontalHeaderItem(i);
         horizontalHeaderItem->setTextAlignment(
                     Qt::AlignVCenter | Qt::AlignHCenter);
-//        horizontalHeaderItem->setFont(QFont(tr("宋体"),16));
     }
 }
 
@@ -538,23 +460,24 @@ void UdpMulticastServer::on_tableWidget_cellClicked(int row, int column)
 
 void UdpMulticastServer::on_tableWidget_cellDoubleClicked(int row, int column)
 {
-#if defined(ShuaKaJiConfigBranch) || defined(JiaYouZhanConfigBranch)
     if(ui->tableWidget->item(row,column) != NULL){
         SelectedRowIndex = row;
-        QString SelectedDeviceIP =
-                ui->tableWidget->item(SelectedRowIndex,0)->text();
+        QString SelectedDeviceMac = ui->tableWidget->item(SelectedRowIndex,4)->text();
 
-#ifdef ShuaKaJiConfigBranch
-        shuakajiconfig->LoadDefaultConfigure(SelectedDeviceIP);
-        CommonSetting::WidgetCenterShow(*shuakajiconfig);
-        shuakajiconfig->show();
-#endif
-
-#ifdef JiaYouZhanConfigBranch
-        jiayouzhanconfig->LoadDefaultConfigure(SelectedDeviceIP);
-        CommonSetting::WidgetCenterShow(*jiayouzhanconfig);
-        jiayouzhanconfig->show();
-#endif
+        if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "ShuaKaJiConfigBranch"){
+            shuakajiconfig->LoadDefaultConfigure(SelectedDeviceMac);
+            CommonSetting::WidgetCenterShow(*shuakajiconfig);
+            shuakajiconfig->show();
+        }else if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "JiaYouZhanConfigWiegBranch"){
+            shuakajiconfig->LoadDefaultConfigure(SelectedDeviceMac);
+            CommonSetting::WidgetCenterShow(*shuakajiconfig);
+            shuakajiconfig->show();
+        }else if(ui->tableWidget->item(SelectedRowIndex,6)->text() == "JiaYouZhanConfigCertificateBranch"){
+            jiayouzhanconfig->LoadDefaultConfigure(SelectedDeviceMac);
+            CommonSetting::WidgetCenterShow(*jiayouzhanconfig);
+            jiayouzhanconfig->show();
+        }else{
+            QMessageBox::critical(this,tr("错误"),tr("本设备程序版本过低,请先升级"));
+        }
     }
-#endif
 }

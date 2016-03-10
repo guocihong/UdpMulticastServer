@@ -1,0 +1,15 @@
+搜索：
+发送：Server###SearchDevice
+接收：Client###SearchDevice###ClientNetWorkInfo###ClientConfigureInfo###VersionInfo###设备类型
+
+其中：
+Client###SearchDevice###为头部
+ClientNetWorkInfo为/etc/eth0-setting文件中的内容
+ClientConfigureInfo为/bin/config.ini文件中的内容
+VersionInfo为/bin/VersionInfo.ini文件中的内容
+设备类型为：ShuaKaJiConfigBranch，JiaYouZhanConfigWiegBranch，JiaYouZhanConfigCertificateBranch
+
+配置：
+发送：Server###Configure###Mac地址###配置信息
+接收：Client###Configure###OK
+
