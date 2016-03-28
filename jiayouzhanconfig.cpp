@@ -24,16 +24,17 @@ void JiaYouZhanConfig::on_btnSend_clicked()
     QString DevelopBoardGateWay = ui->DevelopBoardGateWay->text();
     QString DevelopBoardMask = ui->DevelopBoardMask->text();
     QString DevelopBoardDNS = ui->DevelopBoardDNS->text();
+    QString DevelopBoardMAC = ui->DevelopBoardMAC->text();
 
     QStringList ConfigureInfoList;
-    ConfigureInfoList << ServerIP << ServerListenPort << HeartIntervalTime << SwipCardIntervalTime << "0" << "0" << DeviceID << DevelopBoardIP << DevelopBoardGateWay << DevelopBoardMask << DevelopBoardDNS << "0";
+    ConfigureInfoList << ServerIP << ServerListenPort << HeartIntervalTime << SwipCardIntervalTime << "0" << "0" << DeviceID << DevelopBoardIP << DevelopBoardGateWay << DevelopBoardMask << DevelopBoardDNS << DevelopBoardMAC << "0";
 
     emit signalSendConfigureInfo(ConfigureInfoList.join(","));
 }
 
 void JiaYouZhanConfig::LoadDefaultConfigure(QString SelectedDeviceMac)
 {
-    query.exec(tr("SELECT [server_ip],[server_listen_port],[heart_interval_time],[swip_card_interval_time],[device_id],[develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns] FROM [dtm_device_configure_info] WHERE [develop_board_mac] = '%1'").arg(SelectedDeviceMac));
+    query.exec(tr("SELECT [server_ip],[server_listen_port],[heart_interval_time],[swip_card_interval_time],[device_id],[develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns],[develop_board_mac] FROM [dtm_device_configure_info] WHERE [develop_board_mac] = '%1'").arg(SelectedDeviceMac));
     while(query.next()){
         ui->ServerIP->setText(query.value(0).toString());
         ui->ServerListenPort->setText(query.value(1).toString());
@@ -44,5 +45,6 @@ void JiaYouZhanConfig::LoadDefaultConfigure(QString SelectedDeviceMac)
         ui->DevelopBoardGateWay->setText(query.value(6).toString());
         ui->DevelopBoardMask->setText(query.value(7).toString());
         ui->DevelopBoardDNS->setText(query.value(8).toString());
+        ui->DevelopBoardMAC->setText(query.value(9).toString());
     }
 }

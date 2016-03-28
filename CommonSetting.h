@@ -107,8 +107,8 @@ public:
     static void OpenDataBase()
     {
 #ifdef __i386__
-        QString dbFile = CommonSetting::GetCurrentPath() + QString("../database/DataBase.db");
-//        QString dbFile = CommonSetting::GetCurrentPath() + QString("database/DataBase.db");
+//        QString dbFile = CommonSetting::GetCurrentPath() + QString("../database/DataBase.db");
+        QString dbFile = CommonSetting::GetCurrentPath() + QString("database/DataBase.db");
 #endif
 
 #ifdef __arm__

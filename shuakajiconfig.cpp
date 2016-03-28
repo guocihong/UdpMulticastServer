@@ -25,17 +25,18 @@ void ShuaKaJiConfig::on_btnSend_clicked()
     QString DevelopBoardGateWay = ui->DevelopBoardGateWay->text();
     QString DevelopBoardMask = ui->DevelopBoardMask->text();
     QString DevelopBoardDNS = ui->DevelopBoardDNS->text();
+    QString DevelopBoardMAC = ui->DevelopBoardMAC->text();
     QString SmartUSBNumber = ui->SmartUSBNumber->text();
 
     QStringList ConfigureInfoList;
-    ConfigureInfoList << ServerIP << ServerListenPort << HeartIntervalTime << "0" << RelayOnTime << MaxTime << DeviceID << DevelopBoardIP << DevelopBoardGateWay << DevelopBoardMask << DevelopBoardDNS << SmartUSBNumber;
+    ConfigureInfoList << ServerIP << ServerListenPort << HeartIntervalTime << "0" << RelayOnTime << MaxTime << DeviceID << DevelopBoardIP << DevelopBoardGateWay << DevelopBoardMask << DevelopBoardDNS << DevelopBoardMAC << SmartUSBNumber;
 
     emit signalSendConfigureInfo(ConfigureInfoList.join(","));
 }
 
 void ShuaKaJiConfig::LoadDefaultConfigure(QString SelectedDeviceMac)
 {
-    query.exec(tr("SELECT [server_ip],[server_listen_port],[heart_interval_time],[relay_on_time],[max_time],[device_id],[develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns],[smartusb_number] FROM [dtm_device_configure_info] WHERE [develop_board_mac] = '%1'").arg(SelectedDeviceMac));
+    query.exec(tr("SELECT [server_ip],[server_listen_port],[heart_interval_time],[relay_on_time],[max_time],[device_id],[develop_board_ip],[develop_board_gateway],[develop_board_mask],[develop_board_dns],[develop_board_mac],[smartusb_number] FROM [dtm_device_configure_info] WHERE [develop_board_mac] = '%1'").arg(SelectedDeviceMac));
     while(query.next()){
         ui->ServerIP->setText(query.value(0).toString());
         ui->ServerListenPort->setText(query.value(1).toString());
@@ -47,6 +48,7 @@ void ShuaKaJiConfig::LoadDefaultConfigure(QString SelectedDeviceMac)
         ui->DevelopBoardGateWay->setText(query.value(7).toString());
         ui->DevelopBoardMask->setText(query.value(8).toString());
         ui->DevelopBoardDNS->setText(query.value(9).toString());
-        ui->SmartUSBNumber->setText(query.value(10).toString());
+        ui->DevelopBoardMAC->setText(query.value(10).toString());
+        ui->SmartUSBNumber->setText(query.value(11).toString());
     }
 }
